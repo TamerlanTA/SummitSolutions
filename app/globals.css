@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #F7F3EA;
+    --foreground: #11110F;
+  }
+
+  * {
+    @apply border-line;
+  }
+
+  html {
+    scroll-behavior: initial; /* Handled by Lenis */
+  }
+
+  body {
+    @apply bg-bg text-ink antialiased selection:bg-safety/20 selection:text-ink;
+    font-feature-settings: "ss01", "cv01", "cv11";
+  }
+}
+
+@layer utilities {
+  .vertical-text {
+    writing-mode: vertical-rl;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grid-editorial {
+    background-image: linear-gradient(to right, theme('colors.line') 1px, transparent 1px),
+                      linear-gradient(to bottom, theme('colors.line') 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .grid-overlay {
+    background-image: linear-gradient(to right, theme('colors.line') 1px, transparent 1px),
+                      linear-gradient(to bottom, theme('colors.line') 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .mono {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .gradient-text {
+    color: theme('colors.ink');
+  }
+
+  .tracking-tighter,
+  .tracking-tight {
+    letter-spacing: 0;
+  }
+
+  .grain {
+    filter: url(#noiseFilter);
+  }
+}
+
+.transition-editorial {
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.lenis.lenis-smooth {
+  height: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
