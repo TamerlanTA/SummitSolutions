@@ -14,6 +14,7 @@
 
   html {
     scroll-behavior: initial; /* Handled by Lenis */
+    scroll-padding-top: 112px;
   }
 
   body {

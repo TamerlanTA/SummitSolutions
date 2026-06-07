@@ -2,46 +2,33 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building, Wrench, ArrowRight, ArrowLeft, CheckCircle, Sparkle, HardHat, ChartBarHorizontal } from "@phosphor-icons/react";
-
-type ObjectType = "ЖК" | "БЦ" | "ТРЦ" | "Частный дом" | "Промышленный объект";
-type WorkType =
-  | "Мытьё фасадов"
-  | "Герметизация швов"
-  | "Покраска фасадов"
-  | "Очистка крыш"
-  | "Высотный монтаж"
-  | "Ремонт фасадов";
+import { ArrowRight, ArrowLeft, CheckCircle, WarningCircle } from "@phosphor-icons/react";
+import { heightOptions, objectOptions, services, urgencyOptions, type LeadPayload } from "@/content/site";
 
 type Answers = {
-  objectType?: ObjectType;
-  workType?: WorkType;
+  objectType?: string;
+  workType?: string;
   height?: string;
   urgency?: string;
   name?: string;
   phone?: string;
+  address?: string;
+  area?: string;
+  preferredTime?: string;
+  comment?: string;
+  website?: string;
 };
 
-const objectOptions: ObjectType[] = ["ЖК", "БЦ", "ТРЦ", "Частный дом", "Промышленный объект"];
-const workOptions: WorkType[] = [
-  "Мытьё фасадов",
-  "Герметизация швов",
-  "Покраска фасадов",
-  "Очистка крыш",
-  "Высотный монтаж",
-  "Ремонт фасадов",
-];
-
-const heightOptions = ["До 5 этажей", "5–9 этажей", "10–16 этажей", "Выше 16 этажей"];
-const urgencyOptions = ["В течение недели", "В течение 2–3 дней", "Срочно — 24 часа"];
-
 const stepLabels = ["Объект", "Услуга", "Высота", "Срочность", "Контакт"];
+const workOptions = services.map((service) => service.title);
 
 export function Quiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [error, setError] = useState("");
+  const [startedAt] = useState(() => Date.now());
 
   const canNext = useMemo(() => {
     if (step === 0) return !!answers.objectType;
@@ -53,6 +40,7 @@ export function Quiz() {
   }, [step, answers]);
 
   const handleNext = () => {
+    setError("");
     if (step < stepLabels.length - 1) {
       setStep(step + 1);
     } else {
@@ -62,27 +50,59 @@ export function Quiz() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setIsDone(true);
+    setError("");
+
+    const payload: LeadPayload = {
+      objectType: answers.objectType ?? "",
+      workType: answers.workType ?? "",
+      height: answers.height ?? "",
+      urgency: answers.urgency ?? "",
+      name: answers.name?.trim() ?? "",
+      phone: answers.phone?.trim() ?? "",
+      address: answers.address?.trim(),
+      area: answers.area?.trim(),
+      preferredTime: answers.preferredTime?.trim(),
+      comment: answers.comment?.trim(),
+      website: answers.website?.trim(),
+      startedAt,
+      source: "site_quiz",
+    };
+
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("request_failed");
+      }
+
+      setIsDone(true);
+    } catch {
+      setError("Не удалось отправить заявку. Проверьте соединение или напишите нам в WhatsApp.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <section id="quiz" className="py-32 bg-surface overflow-hidden">
-      <div className="container mx-auto px-6">
+    <section id="quiz" className="py-20 sm:py-24 lg:py-32 bg-surface overflow-hidden">
+      <div className="container mx-auto px-5 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-16 flex flex-col md:flex-row justify-between items-end gap-8">
+          <div className="mb-10 sm:mb-14 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
             <div className="max-w-2xl">
               <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-safety mb-4 block">
-                Pre-Calculation
+                Быстрая заявка
               </span>
-              <h2 className="font-display text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] text-ink">
+              <h2 className="font-display text-4xl sm:text-5xl md:text-7xl font-black tracking-normal uppercase leading-[0.92] text-ink">
                 Займёт меньше <br /> <span className="text-sky italic">минуты.</span>
               </h2>
             </div>
             {!isDone && (
-              <div className="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-                <span>Step {step + 1} of {stepLabels.length}</span>
+              <div className="flex items-center gap-4 sm:gap-6 font-mono text-[10px] uppercase tracking-[0.2em] text-muted w-full md:w-auto">
+                <span>Шаг {step + 1} из {stepLabels.length}</span>
                 <div className="w-32 h-px bg-line relative">
                   <motion.div 
                     initial={{ scaleX: 0 }}
@@ -94,7 +114,7 @@ export function Quiz() {
             )}
           </div>
 
-          <div className="bg-bg rounded-[3rem] border border-line p-8 md:p-16 min-h-[500px] relative overflow-hidden shadow-sm">
+          <div className="bg-bg rounded-[16px] sm:rounded-[24px] border border-line p-5 sm:p-8 md:p-12 lg:p-14 min-h-[500px] relative overflow-hidden shadow-sm">
             <AnimatePresence mode="wait">
               {isDone ? (
                 <motion.div
@@ -103,14 +123,14 @@ export function Quiz() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="flex flex-col items-center text-center py-12"
                 >
-                  <div className="w-24 h-24 rounded-full bg-soft-blue flex items-center justify-center text-sky mb-10">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-soft-blue flex items-center justify-center text-sky mb-8 sm:mb-10">
                     <CheckCircle size={48} weight="bold" />
                   </div>
-                  <h3 className="font-display text-4xl md:text-6xl font-black tracking-tighter uppercase text-ink mb-6">
-                    Заявка принята.
+                  <h3 className="font-display text-4xl md:text-6xl font-black tracking-normal uppercase text-ink mb-6">
+                    Заявка принята
                   </h3>
                   <p className="text-muted text-lg max-w-xl leading-relaxed mb-12">
-                    Мы уже передаём данные ответственному. Если объект срочный, мы уточним детали быстрее, чтобы подготовить следующий шаг.
+                    Данные прошли через подготовленный маршрут заявки. Следующим этапом подключим Supabase, n8n и уведомления в группу WhatsApp.
                   </p>
                   <button 
                     onClick={() => window.location.reload()}
@@ -127,23 +147,23 @@ export function Quiz() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.5, ease: "circOut" }}
                 >
-                  <div className="mb-12">
+                  <div className="mb-8 sm:mb-10">
                     <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block">
                       {stepLabels[step]}
                     </span>
-                    <h3 className="font-display text-3xl md:text-5xl font-black tracking-tighter uppercase text-ink">
+                    <h3 className="font-display text-3xl md:text-5xl font-black tracking-normal uppercase text-ink leading-tight">
                       {step === 0 && "Какой у вас объект?"}
                       {step === 1 && "Что нужно сделать?"}
                       {step === 2 && "Какая высота?"}
                       {step === 3 && "Насколько срочно?"}
                       {step === 4 && "Как с вами связаться?"}
                     </h3>
-                    <p className="mt-4 text-muted text-sm font-mono uppercase tracking-widest">
+                    <p className="mt-4 text-muted text-sm sm:text-base">
                       Можно указать примерные данные
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {step === 0 && objectOptions.map(opt => (
                       <Option key={opt} label={opt} active={answers.objectType === opt} onClick={() => setAnswers({...answers, objectType: opt})} />
                     ))}
@@ -157,25 +177,83 @@ export function Quiz() {
                       <Option key={opt} label={opt} active={answers.urgency === opt} onClick={() => setAnswers({...answers, urgency: opt})} />
                     ))}
                     {step === 4 && (
-                      <div className="md:col-span-2 lg:col-span-3 space-y-8 max-w-2xl">
+                      <div className="md:col-span-2 lg:col-span-3 space-y-6 sm:space-y-8 max-w-2xl">
                         <div className="group relative">
-                          <label className="font-mono text-[10px] uppercase tracking-[0.4em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Full Name</label>
+                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Имя</label>
                           <input 
                             type="text" 
+                            autoComplete="name"
                             placeholder="Константин"
                             value={answers.name || ""}
                             onChange={(e) => setAnswers({...answers, name: e.target.value})}
-                            className="w-full bg-transparent border-b border-line py-4 text-2xl font-display font-black uppercase tracking-tighter text-ink focus:outline-none focus:border-safety transition-colors"
+                            className="w-full bg-transparent border-b border-line py-4 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
                           />
                         </div>
                         <div className="group relative">
-                          <label className="font-mono text-[10px] uppercase tracking-[0.4em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Phone Number</label>
+                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Телефон</label>
                           <input 
                             type="tel" 
+                            autoComplete="tel"
+                            inputMode="tel"
                             placeholder="+7 (___) ___ __ __"
                             value={answers.phone || ""}
                             onChange={(e) => setAnswers({...answers, phone: e.target.value})}
-                            className="w-full bg-transparent border-b border-line py-4 text-2xl font-display font-black uppercase tracking-tighter text-ink focus:outline-none focus:border-safety transition-colors"
+                            className="w-full bg-transparent border-b border-line py-4 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+                          <div className="group relative">
+                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Адрес</label>
+                            <input
+                              type="text"
+                              autoComplete="street-address"
+                              placeholder="Район или улица"
+                              value={answers.address || ""}
+                              onChange={(e) => setAnswers({...answers, address: e.target.value})}
+                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                            />
+                          </div>
+                          <div className="group relative">
+                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Площадь</label>
+                            <input
+                              type="text"
+                              inputMode="text"
+                              placeholder="Напр. 300 м²"
+                              value={answers.area || ""}
+                              onChange={(e) => setAnswers({...answers, area: e.target.value})}
+                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                            />
+                          </div>
+                          <div className="group relative">
+                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Время</label>
+                            <input
+                              type="text"
+                              placeholder="Когда удобно"
+                              value={answers.preferredTime || ""}
+                              onChange={(e) => setAnswers({...answers, preferredTime: e.target.value})}
+                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <div className="group relative">
+                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Комментарий</label>
+                          <textarea
+                            placeholder="Дополнительные детали по объекту"
+                            value={answers.comment || ""}
+                            onChange={(e) => setAnswers({...answers, comment: e.target.value})}
+                            rows={3}
+                            className="w-full resize-none bg-transparent border-b border-line py-4 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                          />
+                        </div>
+                        <div className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                          <label htmlFor="lead-company-site">Сайт компании</label>
+                          <input
+                            id="lead-company-site"
+                            type="text"
+                            tabIndex={-1}
+                            autoComplete="off"
+                            value={answers.website || ""}
+                            onChange={(e) => setAnswers({...answers, website: e.target.value})}
                           />
                         </div>
                       </div>
@@ -186,21 +264,29 @@ export function Quiz() {
             </AnimatePresence>
 
             {!isDone && (
-              <div className="mt-24 flex items-center justify-between">
+              <div className="mt-10 sm:mt-14 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                {error && (
+                  <div className="sm:absolute sm:left-8 sm:bottom-8 flex items-start gap-2 text-sm text-safety max-w-md">
+                    <WarningCircle size={18} weight="bold" className="mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
                 <button 
+                  type="button"
                   onClick={() => setStep(Math.max(0, step - 1))}
                   disabled={step === 0}
-                  className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink disabled:opacity-0 transition-all"
+                  className="order-2 sm:order-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink disabled:opacity-0 transition-all"
                 >
                   <ArrowLeft size={16} />
-                  <span>Back</span>
+                  <span>Назад</span>
                 </button>
                 <button 
+                  type="button"
                   onClick={handleNext}
                   disabled={!canNext || isSubmitting}
-                  className="flex items-center gap-6 bg-ink text-white px-10 py-5 rounded-full font-display font-black uppercase text-sm tracking-widest hover:bg-safety disabled:bg-line disabled:text-muted transition-all transform hover:scale-105 active:scale-95"
+                  className="order-1 sm:order-2 flex w-full sm:w-auto items-center justify-center gap-4 sm:gap-6 bg-ink text-white px-7 sm:px-10 py-4 sm:py-5 rounded-[6px] font-display font-black uppercase text-xs sm:text-sm tracking-widest hover:bg-safety disabled:bg-line disabled:text-muted transition-all active:scale-95"
                 >
-                  <span>{isSubmitting ? "Processing..." : step === stepLabels.length - 1 ? "Submit Request" : "Next Step"}</span>
+                  <span>{isSubmitting ? "Отправляем..." : step === stepLabels.length - 1 ? "Отправить заявку" : "Дальше"}</span>
                   {!isSubmitting && <ArrowRight size={18} />}
                 </button>
               </div>
@@ -215,10 +301,11 @@ export function Quiz() {
 function Option({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) {
   return (
     <button 
+      type="button"
       onClick={onClick}
-      className={`px-8 py-6 rounded-2xl border text-left transition-editorial ${active ? 'bg-ink border-ink text-white shadow-xl' : 'bg-surface border-line text-ink hover:border-safety'}`}
+      className={`group px-5 sm:px-7 py-5 sm:py-6 rounded-[10px] border text-left transition-editorial min-h-[96px] ${active ? 'bg-ink border-ink text-white shadow-xl' : 'bg-surface border-line text-ink hover:border-safety'}`}
     >
-      <span className="font-display font-black text-xl md:text-2xl uppercase tracking-tighter block">{label}</span>
+      <span className="font-display font-black text-xl md:text-2xl uppercase tracking-normal leading-tight block">{label}</span>
       <div className={`mt-4 w-6 h-px ${active ? 'bg-safety' : 'bg-line'} group-hover:w-12 transition-all`} />
     </button>
   );

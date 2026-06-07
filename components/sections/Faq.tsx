@@ -27,17 +27,17 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-32 bg-surface overflow-hidden">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+    <section className="py-20 sm:py-24 lg:py-32 bg-surface overflow-hidden">
+      <div className="container mx-auto px-5 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
           <div className="lg:col-span-5">
             <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-safety mb-6 block">
-              Common Inquiries
+              Вопросы
             </span>
-            <h2 className="font-display text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] text-ink mb-12">
+            <h2 className="font-display text-4xl sm:text-5xl md:text-7xl font-black tracking-normal uppercase leading-[0.92] text-ink mb-8 sm:mb-10">
               Частые <br /> вопросы.
             </h2>
-            <p className="text-muted text-lg leading-relaxed max-w-sm">
+            <p className="text-muted text-base sm:text-lg leading-relaxed max-w-md">
               Если у вас остались специфические вопросы по высотным работам, мы готовы обсудить их при первом звонке.
             </p>
           </div>
@@ -45,17 +45,18 @@ export function Faq() {
           <div className="lg:col-span-7 space-y-4">
             {faqs.map((faq, index) => (
               <div 
-                key={index}
-                className="group border border-line rounded-[2rem] bg-bg overflow-hidden transition-all duration-500 hover:border-safety"
+                key={faq.q}
+                className="group border border-line rounded-[14px] bg-bg overflow-hidden transition-all duration-500 hover:border-safety"
               >
                 <button
+                  type="button"
                   onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                  className="w-full flex items-center justify-between p-8 text-left"
+                  className="w-full flex items-center justify-between gap-4 p-5 sm:p-7 lg:p-8 text-left"
                 >
-                  <span className="font-display text-xl md:text-2xl font-black uppercase tracking-tighter text-ink">
+                  <span className="font-display text-lg sm:text-xl md:text-2xl font-black uppercase tracking-normal text-ink leading-tight">
                     {faq.q}
                   </span>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${openIndex === index ? 'bg-ink text-white rotate-180' : 'bg-surface text-ink group-hover:bg-soft-orange group-hover:text-safety'}`}>
+                  <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center transition-all shrink-0 ${openIndex === index ? 'bg-ink text-white rotate-180' : 'bg-surface text-ink group-hover:bg-soft-orange group-hover:text-safety'}`}>
                     {openIndex === index ? <Minus size={20} weight="bold" /> : <Plus size={20} weight="bold" />}
                   </div>
                 </button>
@@ -67,8 +68,8 @@ export function Faq() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.5, ease: "circOut" }}
                     >
-                      <div className="px-8 pb-8 pt-0">
-                        <p className="text-muted text-lg leading-relaxed max-w-2xl border-t border-line/30 pt-8">
+                      <div className="px-5 sm:px-7 lg:px-8 pb-6 sm:pb-8 pt-0">
+                        <p className="text-muted text-base sm:text-lg leading-relaxed max-w-2xl border-t border-line/30 pt-6 sm:pt-8">
                           {faq.a}
                         </p>
                       </div>
