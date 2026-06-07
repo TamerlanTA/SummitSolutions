@@ -1,0 +1,370 @@
+{
+  "name": "Summit Lead WhatsApp Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summit-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f5f89937-67a8-4f08-8d7d-498e091b6b4d",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        120
+      ],
+      "webhookId": "summit-lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "3b37a517-0e4f-44ed-8c5d-2f61cb23f901",
+              "leftValue": "={{ $json.headers['x-lead-webhook-secret'] || $json.headers['X-Lead-Webhook-Secret'] || '' }}",
+              "rightValue": "={{ $env.N8N_LEAD_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "98050f07-31a4-49dd-96c2-6b4e7cc41c70",
+      "name": "Validate Webhook Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -720,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: 'Unauthorized' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "09f364e5-a9e0-4a89-91d2-80787c15e5fc",
+      "name": "Unauthorized Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.body?.lead || $json.lead || {};\nconst empty = (value) => {\n  if (value === undefined || value === null) return '—';\n  const text = String(value).trim();\n  return text.length ? text : '—';\n};\n\nconst leadId = empty(lead.id);\nconst messageText = [\n  'Новая заявка Summit Solutions',\n  '',\n  `Имя: ${empty(lead.name)}`,\n  `Телефон: ${empty(lead.phone)}`,\n  `Объект: ${empty(lead.objectType)}`,\n  `Тип работ: ${empty(lead.workType)}`,\n  `Высота: ${empty(lead.height)}`,\n  `Срочность: ${empty(lead.urgency)}`,\n  `Адрес: ${empty(lead.address)}`,\n  `Площадь: ${empty(lead.area)}`,\n  `Удобное время: ${empty(lead.preferredTime)}`,\n  `Комментарий: ${empty(lead.comment)}`,\n  `Источник: ${empty(lead.source)}`,\n  `ID заявки: ${leadId}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      leadId,\n      messageText,\n      lead,\n    },\n  },\n];"
+      },
+      "id": "530b0168-447d-472d-acd1-3784e019d7d0",
+      "name": "Build WhatsApp Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{$env.WHATSAPP_CLOUD_PHONE_NUMBER_ID}}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.WHATSAPP_CLOUD_ACCESS_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $env.WHATSAPP_RECIPIENT_ID, type: 'text', text: { body: $json.messageText } } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ef37dc06-8e26-4714-8c90-9caa4e0f1db3",
+      "name": "Send WhatsApp Cloud API Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        40
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "98d92733-2cf4-4665-a0f5-27f17938d37d",
+              "leftValue": "={{ (($json.statusCode >= 200 && $json.statusCode < 300) || !!$json.body?.messages) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fb4dbed8-ef6d-4456-8334-3e72cc11782b",
+      "name": "WhatsApp Send Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$node['Build WhatsApp Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'notified', notification_status: 'sent', notification_error: null } }}",
+        "options": {}
+      },
+      "id": "9e802112-9eb9-4f4b-8a09-61852bfc72dd",
+      "name": "Mark Lead Sent In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, status: 'sent', leadId: $node['Build WhatsApp Message'].json.leadId } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "6595e6b6-c4d7-48d5-8f22-71822ea331bc",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$node['Build WhatsApp Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'failed', notification_status: 'failed', notification_error: ($json.body?.error?.message ? ('WhatsApp Cloud API send failed: ' + String($json.body.error.message).slice(0, 300)) : 'WhatsApp Cloud API send failed') } }}",
+        "options": {}
+      },
+      "id": "e64dad92-dd43-4f6d-93a3-0b93d8378200",
+      "name": "Mark Lead Failed In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, status: 'failed', leadId: $node['Build WhatsApp Message'].json.leadId, error: 'WhatsApp Cloud API send failed' } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "86edfd02-cb5b-4e92-811c-52cf6d72cda3",
+      "name": "Failure Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Webhook Secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook Secret": {
+      "main": [
+        [
+          {
+            "node": "Build WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Cloud API Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Cloud API Message": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Send Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Send Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Sent In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Failed In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Sent In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Failed In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Failure Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-06-07T00:00:00.000Z",
+  "versionId": "1"
+}

@@ -1,0 +1,357 @@
+{
+  "name": "Summit Lead Telegram Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summit-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0eb3f54f-c1cc-4a24-8f7e-d0f3fca35fb5",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        120
+      ],
+      "webhookId": "summit-lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "5f6f0c75-fcc7-4c78-8f66-0d5132144668",
+              "leftValue": "={{ $json.headers['x-lead-webhook-secret'] || $json.headers['X-Lead-Webhook-Secret'] || '' }}",
+              "rightValue": "={{ $env.N8N_LEAD_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7d39f413-03e2-4f8c-b26a-f2d3dd663022",
+      "name": "Validate Webhook Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -720,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: 'Unauthorized' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "72fb0d6a-e1b8-4e2e-a89f-b16023e5060c",
+      "name": "Unauthorized Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.body?.lead || $json.lead || {};\nconst empty = (value) => {\n  if (value === undefined || value === null) return '—';\n  const text = String(value).trim();\n  return text.length ? text : '—';\n};\n\nconst leadId = empty(lead.id);\nconst messageText = [\n  'Новая заявка Summit Solutions',\n  '',\n  `Имя: ${empty(lead.name)}`,\n  `Телефон: ${empty(lead.phone)}`,\n  `Объект: ${empty(lead.objectType)}`,\n  `Тип работ: ${empty(lead.workType)}`,\n  `Высота: ${empty(lead.height)}`,\n  `Срочность: ${empty(lead.urgency)}`,\n  `Адрес: ${empty(lead.address)}`,\n  `Площадь: ${empty(lead.area)}`,\n  `Удобное время: ${empty(lead.preferredTime)}`,\n  `Комментарий: ${empty(lead.comment)}`,\n  `Источник: ${empty(lead.source)}`,\n  `ID заявки: ${leadId}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      leadId,\n      messageText,\n      lead,\n    },\n  },\n];"
+      },
+      "id": "470f1608-31f2-4994-a2cb-d07ae196b7ed",
+      "name": "Build Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $env.TELEGRAM_CHAT_ID, text: $json.messageText, disable_web_page_preview: true } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "95db5f9d-d353-4ae2-a29e-97cc668f641c",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        40
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "542f45a8-ef2b-4f5e-9638-20defa126d39",
+              "leftValue": "={{ (($json.statusCode >= 200 && $json.statusCode < 300) || $json.body?.ok === true) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3c2e20df-7847-4c40-a0be-049e07d90d55",
+      "name": "Telegram Send Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$node['Build Telegram Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'notified', notification_status: 'sent', notification_error: null } }}",
+        "options": {}
+      },
+      "id": "9a18ae82-1318-4941-869d-b9038f8db1cb",
+      "name": "Mark Lead Sent In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, status: 'sent', leadId: $node['Build Telegram Message'].json.leadId } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "4b1f961b-dc9e-4cc5-b9ca-eec4f81c64db",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$node['Build Telegram Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'failed', notification_status: 'failed', notification_error: ($json.body?.description ? ('Telegram send failed: ' + String($json.body.description).slice(0, 300)) : 'Telegram send failed') } }}",
+        "options": {}
+      },
+      "id": "e76d3f95-0ee0-4f96-ad0a-b48d4a5a5ec5",
+      "name": "Mark Lead Failed In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, status: 'failed', leadId: $node['Build Telegram Message'].json.leadId, error: 'Telegram send failed' } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "f4f4c46d-e07d-47da-a73a-6d3686541388",
+      "name": "Failure Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Webhook Secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook Secret": {
+      "main": [
+        [
+          {
+            "node": "Build Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Sent In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Failed In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Sent In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Failed In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Failure Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-06-07T00:00:00.000Z",
+  "versionId": "1"
+}

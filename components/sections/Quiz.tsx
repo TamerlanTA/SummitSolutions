@@ -75,13 +75,15 @@ export function Quiz() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.ok) {
         throw new Error("request_failed");
       }
 
       setIsDone(true);
     } catch {
-      setError("Не удалось отправить заявку. Проверьте соединение или напишите нам в WhatsApp.");
+      setError("Не удалось отправить заявку. Проверьте соединение или напишите нам напрямую.");
     } finally {
       setIsSubmitting(false);
     }
@@ -127,10 +129,10 @@ export function Quiz() {
                     <CheckCircle size={48} weight="bold" />
                   </div>
                   <h3 className="font-display text-4xl md:text-6xl font-black tracking-normal uppercase text-ink mb-6">
-                    Заявка принята
+                    Заявка принята.
                   </h3>
                   <p className="text-muted text-lg max-w-xl leading-relaxed mb-12">
-                    Данные прошли через подготовленный маршрут заявки. Следующим этапом подключим Supabase, n8n и уведомления в группу WhatsApp.
+                    Мы получили данные и скоро свяжемся с вами.
                   </p>
                   <button 
                     onClick={() => window.location.reload()}

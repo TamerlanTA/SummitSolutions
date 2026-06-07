@@ -1,0 +1,377 @@
+{
+  "name": "Summit Lead Telegram Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summit-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5591c060-b882-429f-b71a-ffd31e4066a8",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        304
+      ],
+      "webhookId": "summit-lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5f6f0c75-fcc7-4c78-8f66-0d5132144668",
+              "leftValue": "={{ $json.headers['x-lead-webhook-secret'] || $json.headers['X-Lead-Webhook-Secret'] || '' }}",
+              "rightValue": "=-71vwHiv7miARcBDqAVzFncL69Jse69837hf-ny7tPI",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d5d249b5-9a0a-4b67-b1bc-1f77c734ef22",
+      "name": "Validate Webhook Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1776,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: 'Unauthorized' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "36e39d0c-1ec5-4784-8694-be7e6f74d3c6",
+      "name": "Unauthorized Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1536,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $json.body?.lead || $json.lead || {};\nconst empty = (value) => {\n  if (value === undefined || value === null) return '—';\n  const text = String(value).trim();\n  return text.length ? text : '—';\n};\n\nconst leadId = empty(lead.id);\nconst messageText = [\n  'Новая заявка Summit Solutions',\n  '',\n  `Имя: ${empty(lead.name)}`,\n  `Телефон: ${empty(lead.phone)}`,\n  `Объект: ${empty(lead.objectType)}`,\n  `Тип работ: ${empty(lead.workType)}`,\n  `Высота: ${empty(lead.height)}`,\n  `Срочность: ${empty(lead.urgency)}`,\n  `Адрес: ${empty(lead.address)}`,\n  `Площадь: ${empty(lead.area)}`,\n  `Удобное время: ${empty(lead.preferredTime)}`,\n  `Комментарий: ${empty(lead.comment)}`,\n  `Источник: ${empty(lead.source)}`,\n  `ID заявки: ${leadId}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      leadId,\n      messageText,\n      lead,\n    },\n  },\n];"
+      },
+      "id": "df1aa895-dd04-4a00-9862-7b6a08bfc1e0",
+      "name": "Build Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1536,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot8760869719:AAGsSr9jffVSk0Tsl-a4Abifs9Wt983cr9U/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "-5296229853"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.messageText}}"
+            },
+            {
+              "name": "disable_web_page_preview",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "acd10815-07a8-45bf-b064-7274bcbae888",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1296,
+        224
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "542f45a8-ef2b-4f5e-9638-20defa126d39",
+              "leftValue": "={{ (($json.statusCode >= 200 && $json.statusCode < 300) || $json.body?.ok === true) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "78d1df7e-feb7-481e-b80a-b83d373a72ef",
+      "name": "Telegram Send Succeeded",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1056,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://aphwtqotfiohdwngsrkr.supabase.co/rest/v1/leads?id=eq.{{$node['Build Telegram Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaHd0cW90ZmlvaGR3bmdzcmtyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDg0OTgwNiwiZXhwIjoyMDk2NDI1ODA2fQ.7_XceDY3JaQqSSwEu8bCxI-zerXAqoVZ-bptA4-1sC4"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaHd0cW90ZmlvaGR3bmdzcmtyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDg0OTgwNiwiZXhwIjoyMDk2NDI1ODA2fQ.7_XceDY3JaQqSSwEu8bCxI-zerXAqoVZ-bptA4-1sC4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'notified', notification_status: 'sent', notification_error: null } }}",
+        "options": {}
+      },
+      "id": "da4cf038-8151-4f29-a1f4-3fdbc90fe25d",
+      "name": "Mark Lead Sent In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -816,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, status: 'sent', leadId: $node['Build Telegram Message'].json.leadId } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a4c82c95-67cc-4382-a2d5-3764dbdc7ca3",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://aphwtqotfiohdwngsrkr.supabase.co/rest/v1/leads?id=eq.{{$node['Build Telegram Message'].json.leadId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaHd0cW90ZmlvaGR3bmdzcmtyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDg0OTgwNiwiZXhwIjoyMDk2NDI1ODA2fQ.7_XceDY3JaQqSSwEu8bCxI-zerXAqoVZ-bptA4-1sC4"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaHd0cW90ZmlvaGR3bmdzcmtyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDg0OTgwNiwiZXhwIjoyMDk2NDI1ODA2fQ.7_XceDY3JaQqSSwEu8bCxI-zerXAqoVZ-bptA4-1sC4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { status: 'failed', notification_status: 'failed', notification_error: ($json.body?.description ? ('Telegram send failed: ' + String($json.body.description).slice(0, 300)) : 'Telegram send failed') } }}",
+        "options": {}
+      },
+      "id": "7ee99389-690f-4be1-8635-c8eb6dce851e",
+      "name": "Mark Lead Failed In Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -816,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, status: 'failed', leadId: $node['Build Telegram Message'].json.leadId, error: 'Telegram send failed' } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "2c00251c-cc9a-4e83-b88c-4e2c97f0057a",
+      "name": "Failure Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        320
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Webhook Secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook Secret": {
+      "main": [
+        [
+          {
+            "node": "Build Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Succeeded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Succeeded": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Sent In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Failed In Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Sent In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Failed In Supabase": {
+      "main": [
+        [
+          {
+            "node": "Failure Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f208bdb2-100e-44b3-89ed-91f6fda86716",
+  "meta": {
+    "instanceId": "4928c8c460c82b0fcb17837c69d4f2cc2f5f9257ca8f5696759d905df12ce65d"
+  },
+  "nodeGroups": [],
+  "id": "z8JZst9QsteVRzHT",
+  "tags": []
+}
