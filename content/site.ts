@@ -8,12 +8,11 @@ export const brand = {
 };
 
 export const siteImages = {
-  // Replace these URLs with local files later, for example: "/images/hero-facade.jpg".
-  hero: "https://picsum.photos/seed/facade/1200/1500",
+  hero: "/images/hero.png",
   cases: [
-    "https://picsum.photos/seed/project1/1200/900",
-    "https://picsum.photos/seed/project2/1200/900",
-    "https://picsum.photos/seed/project3/1200/900",
+    "/images/project-1.png",
+    "/images/project-2.png",
+    "/images/project-3.png",
   ],
 };
 
