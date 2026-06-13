@@ -1,9 +1,9 @@
 export const brand = {
   name: "Vysota",
   city: "Алматы",
-  phone: "+7 707 123 45 67",
-  phoneHref: "tel:+77071234567",
-  whatsappHref: "https://wa.me/77071234567",
+  phone: "+7 707 159 2246",
+  phoneHref: "tel:+77071592246",
+  whatsappHref: "https://wa.me/77071592246",
   address: "Алматы, Казахстан",
 };
 

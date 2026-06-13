@@ -116,157 +116,180 @@ export function Quiz() {
             )}
           </div>
 
-          <div className="bg-bg rounded-[16px] sm:rounded-[24px] border border-line p-5 sm:p-8 md:p-12 lg:p-14 min-h-[500px] relative overflow-hidden shadow-sm">
-            <AnimatePresence mode="wait">
-              {isDone ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center text-center py-12"
-                >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-soft-blue flex items-center justify-center text-sky mb-8 sm:mb-10">
-                    <CheckCircle size={48} weight="bold" />
-                  </div>
-                  <h3 className="font-display text-4xl md:text-6xl font-black tracking-normal uppercase text-ink mb-6">
-                    Заявка принята.
-                  </h3>
-                  <p className="text-muted text-lg max-w-xl leading-relaxed mb-12">
-                    Мы получили данные и скоро свяжемся с вами.
-                  </p>
-                  <button 
-                    onClick={() => window.location.reload()}
-                    className="font-mono text-[10px] uppercase tracking-[0.3em] text-safety border-b border-safety/30 pb-1"
+          <div data-quiz-card className="bg-bg rounded-[16px] sm:rounded-[24px] border border-line p-5 sm:p-8 md:p-10 lg:p-12 h-[860px] sm:h-[800px] lg:h-[735px] relative overflow-hidden shadow-sm flex flex-col">
+            <div data-quiz-scroll className="flex-1">
+              <AnimatePresence mode="wait">
+                {isDone ? (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex min-h-full flex-col items-center justify-center text-center py-10"
                   >
-                    Вернуться на главную
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.5, ease: "circOut" }}
-                >
-                  <div className="mb-8 sm:mb-10">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block">
-                      {stepLabels[step]}
-                    </span>
-                    <h3 className="font-display text-3xl md:text-5xl font-black tracking-normal uppercase text-ink leading-tight">
-                      {step === 0 && "Какой у вас объект?"}
-                      {step === 1 && "Что нужно сделать?"}
-                      {step === 2 && "Какая высота?"}
-                      {step === 3 && "Насколько срочно?"}
-                      {step === 4 && "Как с вами связаться?"}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-soft-blue flex items-center justify-center text-sky mb-8 sm:mb-10">
+                      <CheckCircle size={48} weight="bold" />
+                    </div>
+                    <h3 className="font-display text-4xl md:text-6xl font-black tracking-normal uppercase text-ink mb-6">
+                      Заявка принята.
                     </h3>
-                    <p className="mt-4 text-muted text-sm sm:text-base">
-                      Можно указать примерные данные
+                    <p className="text-muted text-lg max-w-xl leading-relaxed mb-12">
+                      Мы получили данные и скоро свяжемся с вами.
                     </p>
-                  </div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="font-mono text-[10px] uppercase tracking-[0.3em] text-safety border-b border-safety/30 pb-1"
+                    >
+                      Вернуться на главную
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={step}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.35, ease: "circOut" }}
+                    className="pb-2"
+                  >
+                    <div className="mb-6 sm:mb-8">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block">
+                        {stepLabels[step]}
+                      </span>
+                      <h3 className="font-display text-3xl md:text-5xl font-black tracking-normal uppercase text-ink leading-tight">
+                        {step === 0 && "Какой у вас объект?"}
+                        {step === 1 && "Что нужно сделать?"}
+                        {step === 2 && "Какая высота?"}
+                        {step === 3 && "Насколько срочно?"}
+                        {step === 4 && "Как с вами связаться?"}
+                      </h3>
+                      <p className="mt-4 text-muted text-sm sm:text-base">
+                        Можно указать примерные данные
+                      </p>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {step === 0 && objectOptions.map(opt => (
-                      <Option key={opt} label={opt} active={answers.objectType === opt} onClick={() => setAnswers({...answers, objectType: opt})} />
-                    ))}
-                    {step === 1 && workOptions.map(opt => (
-                      <Option key={opt} label={opt} active={answers.workType === opt} onClick={() => setAnswers({...answers, workType: opt})} />
-                    ))}
-                    {step === 2 && heightOptions.map(opt => (
-                      <Option key={opt} label={opt} active={answers.height === opt} onClick={() => setAnswers({...answers, height: opt})} />
-                    ))}
-                    {step === 3 && urgencyOptions.map(opt => (
-                      <Option key={opt} label={opt} active={answers.urgency === opt} onClick={() => setAnswers({...answers, urgency: opt})} />
-                    ))}
-                    {step === 4 && (
-                      <div className="md:col-span-2 lg:col-span-3 space-y-6 sm:space-y-8 max-w-2xl">
-                        <div className="group relative">
-                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Имя</label>
-                          <input 
-                            type="text" 
-                            autoComplete="name"
-                            placeholder="Константин"
-                            value={answers.name || ""}
-                            onChange={(e) => setAnswers({...answers, name: e.target.value})}
-                            className="w-full bg-transparent border-b border-line py-4 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
-                          />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {step === 0 && objectOptions.map(opt => (
+                        <Option key={opt} label={opt} active={answers.objectType === opt} onClick={() => setAnswers({...answers, objectType: opt})} />
+                      ))}
+                      {step === 1 && (
+                        <div className="md:col-span-2 lg:col-span-3 max-w-2xl">
+                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-3 block">
+                            Выберите услугу
+                          </label>
+                          <select
+                            data-work-select
+                            value={answers.workType || ""}
+                            onChange={(e) => setAnswers({...answers, workType: e.target.value})}
+                            className="w-full appearance-none rounded-[10px] border border-line bg-surface px-5 sm:px-6 py-5 sm:py-6 font-display text-xl sm:text-2xl font-black uppercase tracking-normal text-ink outline-none transition-colors focus:border-safety"
+                          >
+                            <option value="" disabled>Выбрать из списка</option>
+                            {workOptions.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                          {answers.workType && (
+                            <p className="mt-5 rounded-[10px] border border-line bg-bg px-5 py-4 text-sm sm:text-base text-muted">
+                              Выбрано: <span className="font-semibold text-ink">{answers.workType}</span>
+                            </p>
+                          )}
                         </div>
-                        <div className="group relative">
-                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Телефон</label>
-                          <input 
-                            type="tel" 
-                            autoComplete="tel"
-                            inputMode="tel"
-                            placeholder="+7 (___) ___ __ __"
-                            value={answers.phone || ""}
-                            onChange={(e) => setAnswers({...answers, phone: e.target.value})}
-                            className="w-full bg-transparent border-b border-line py-4 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+                      )}
+                      {step === 2 && heightOptions.map(opt => (
+                        <Option key={opt} label={opt} active={answers.height === opt} onClick={() => setAnswers({...answers, height: opt})} />
+                      ))}
+                      {step === 3 && urgencyOptions.map(opt => (
+                        <Option key={opt} label={opt} active={answers.urgency === opt} onClick={() => setAnswers({...answers, urgency: opt})} />
+                      ))}
+                      {step === 4 && (
+                        <div className="md:col-span-2 lg:col-span-3 max-w-3xl">
                           <div className="group relative">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Адрес</label>
-                            <input
-                              type="text"
-                              autoComplete="street-address"
-                              placeholder="Район или улица"
-                              value={answers.address || ""}
-                              onChange={(e) => setAnswers({...answers, address: e.target.value})}
-                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                            <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Имя</label>
+                            <input 
+                              type="text" 
+                              autoComplete="name"
+                              placeholder="Константин"
+                              value={answers.name || ""}
+                              onChange={(e) => setAnswers({...answers, name: e.target.value})}
+                              className="w-full bg-transparent border-b border-line py-3 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
                             />
                           </div>
-                          <div className="group relative">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Площадь</label>
-                            <input
-                              type="text"
-                              inputMode="text"
-                              placeholder="Напр. 300 м²"
-                              value={answers.area || ""}
-                              onChange={(e) => setAnswers({...answers, area: e.target.value})}
-                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                          <div className="group relative mt-5 sm:mt-6">
+                            <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Телефон</label>
+                            <input 
+                              type="tel" 
+                              autoComplete="tel"
+                              inputMode="tel"
+                              placeholder="+7 (___) ___ __ __"
+                              value={answers.phone || ""}
+                              onChange={(e) => setAnswers({...answers, phone: e.target.value})}
+                              className="w-full bg-transparent border-b border-line py-3 text-xl sm:text-2xl font-display font-black uppercase tracking-normal text-ink focus:outline-none focus:border-safety transition-colors"
                             />
                           </div>
-                          <div className="group relative">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Время</label>
+                          <div className="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                            <div className="group relative">
+                              <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Адрес</label>
+                              <input
+                                type="text"
+                                autoComplete="street-address"
+                                placeholder="Район или улица"
+                                value={answers.address || ""}
+                                onChange={(e) => setAnswers({...answers, address: e.target.value})}
+                                className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                              />
+                            </div>
+                            <div className="group relative">
+                              <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Площадь</label>
+                              <input
+                                type="text"
+                                inputMode="text"
+                                placeholder="Напр. 300 м²"
+                                value={answers.area || ""}
+                                onChange={(e) => setAnswers({...answers, area: e.target.value})}
+                                className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                              />
+                            </div>
+                            <div className="group relative">
+                              <label className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Время</label>
+                              <input
+                                type="text"
+                                placeholder="Когда удобно"
+                                value={answers.preferredTime || ""}
+                                onChange={(e) => setAnswers({...answers, preferredTime: e.target.value})}
+                                className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                              />
+                            </div>
+                          </div>
+                          <div className="group relative mt-5 sm:mt-6">
+                            <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Комментарий</label>
+                            <textarea
+                              placeholder="Дополнительные детали по объекту"
+                              value={answers.comment || ""}
+                              onChange={(e) => setAnswers({...answers, comment: e.target.value})}
+                              rows={2}
+                              className="w-full resize-none bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                            />
+                          </div>
+                          <div className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                            <label htmlFor="lead-company-site">Сайт компании</label>
                             <input
+                              id="lead-company-site"
                               type="text"
-                              placeholder="Когда удобно"
-                              value={answers.preferredTime || ""}
-                              onChange={(e) => setAnswers({...answers, preferredTime: e.target.value})}
-                              className="w-full bg-transparent border-b border-line py-3 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
+                              tabIndex={-1}
+                              autoComplete="off"
+                              value={answers.website || ""}
+                              onChange={(e) => setAnswers({...answers, website: e.target.value})}
                             />
                           </div>
                         </div>
-                        <div className="group relative">
-                          <label className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted mb-2 block transition-colors group-focus-within:text-safety">Комментарий</label>
-                          <textarea
-                            placeholder="Дополнительные детали по объекту"
-                            value={answers.comment || ""}
-                            onChange={(e) => setAnswers({...answers, comment: e.target.value})}
-                            rows={3}
-                            className="w-full resize-none bg-transparent border-b border-line py-4 text-base sm:text-lg text-ink focus:outline-none focus:border-safety transition-colors"
-                          />
-                        </div>
-                        <div className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-                          <label htmlFor="lead-company-site">Сайт компании</label>
-                          <input
-                            id="lead-company-site"
-                            type="text"
-                            tabIndex={-1}
-                            autoComplete="off"
-                            value={answers.website || ""}
-                            onChange={(e) => setAnswers({...answers, website: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {!isDone && (
-              <div className="mt-10 sm:mt-14 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-6 sm:mt-8 shrink-0 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 {error && (
                   <div className="sm:absolute sm:left-8 sm:bottom-8 flex items-start gap-2 text-sm text-safety max-w-md">
                     <WarningCircle size={18} weight="bold" className="mt-0.5 shrink-0" />
@@ -274,6 +297,7 @@ export function Quiz() {
                   </div>
                 )}
                 <button 
+                  data-quiz-back
                   type="button"
                   onClick={() => setStep(Math.max(0, step - 1))}
                   disabled={step === 0}
@@ -283,6 +307,7 @@ export function Quiz() {
                   <span>Назад</span>
                 </button>
                 <button 
+                  data-quiz-next
                   type="button"
                   onClick={handleNext}
                   disabled={!canNext || isSubmitting}
